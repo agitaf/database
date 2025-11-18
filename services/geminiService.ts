@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import type { DataRow, AnalysisResult } from '../types';
+import type { DataRow, AnalysisResult, ChatMessage } from '../types';
 
 // Assume process.env.API_KEY is available in the environment
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
@@ -129,5 +129,53 @@ export const analyzeDataWithGemini = async (data: DataRow[], headers: string[]):
              throw new Error("Failed to parse the analysis from the AI. The response was not valid JSON.");
         }
         throw new Error("Failed to get analysis from the AI. The model may be overloaded or an API error occurred.");
+    }
+};
+
+export const continueChat = async (
+    data: DataRow[], 
+    headers: string[], 
+    initialAnalysis: AnalysisResult, 
+    chatHistory: ChatMessage[]
+): Promise<string> => {
+    if (!process.env.API_KEY) {
+        throw new Error("API_KEY environment variable not set.");
+    }
+    
+    const model = 'gemini-2.5-flash';
+    const dataSample = formatDataForPrompt(data, headers);
+
+    const systemInstruction = `You are an expert e-commerce data analyst continuing a conversation with a user about their data. 
+    You have already provided an initial analysis. Be helpful, concise, and stay focused on analyzing the provided data.
+    
+    Here is a sample of the user's data in CSV format:
+    ---
+    ${dataSample}
+    ---
+    
+    Here is the initial JSON analysis you provided:
+    ---
+    ${JSON.stringify(initialAnalysis, null, 2)}
+    ---
+    `;
+
+    const contents = chatHistory.map(message => ({
+        role: message.role,
+        parts: [{ text: message.text }]
+    }));
+
+    try {
+        const response = await ai.models.generateContent({
+            model: model,
+            contents: contents,
+            config: {
+                systemInstruction,
+            },
+        });
+
+        return response.text;
+    } catch (error) {
+        console.error("Error calling Gemini API for chat:", error);
+        throw new Error("Failed to get a response from the AI. The model may be overloaded or an API error occurred.");
     }
 };

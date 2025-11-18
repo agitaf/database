@@ -25,3 +25,14 @@ export interface AnalysisResult {
         data: { label: string; value: number }[];
     }[];
 }
+
+export type ChatMessage = {
+  role: 'user' | 'model';
+  text: string;
+};
+
+export type TodoItem = {
+  id: string;
+  text: string;
+  completed: boolean;
+};
