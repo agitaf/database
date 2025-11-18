@@ -19,6 +19,7 @@ export interface AnalysisResult {
         details?: string;
     }[];
     actionableRecommendations?: string[];
+    suggestedAgentTasks?: string[];
     suggestedVisualizations?: {
         title: string;
         type: 'bar' | 'pie';
@@ -36,3 +37,14 @@ export type TodoItem = {
   text: string;
   completed: boolean;
 };
+
+export interface DataContext {
+  schema: string[];
+  viewSettings: {
+    filterQuery: string;
+    sortConfig: SortConfig | null;
+    viewMode: 'table' | 'grid';
+  };
+  dataSnapshot: DataRow[];
+  initialAnalysis: AnalysisResult | null;
+}

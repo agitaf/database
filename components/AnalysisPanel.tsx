@@ -10,6 +10,7 @@ import { PaperAirplaneIcon } from './icons/PaperAirplaneIcon';
 import { PlusCircleIcon } from './icons/PlusCircleIcon';
 import { TrashIcon } from './icons/TrashIcon';
 import { ClipboardDocumentListIcon } from './icons/ClipboardDocumentListIcon';
+import { CommandLineIcon } from './icons/CommandLineIcon';
 
 
 const BarChart: React.FC<{ data: { label: string; value: number }[] }> = ({ data }) => {
@@ -153,6 +154,22 @@ const AnalysisContent: React.FC<{ content: AnalysisResult, onAddTodo: (text: str
                                 >
                                     <PlusCircleIcon className="w-5 h-5" />
                                 </button>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+
+            {content.suggestedAgentTasks && content.suggestedAgentTasks.length > 0 && (
+                 <div>
+                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2 flex items-center">
+                        <CommandLineIcon className="h-6 w-6 mr-3 text-indigo-500 dark:text-indigo-400 flex-shrink-0" />
+                        <span>Suggested Agent Tasks</span>
+                    </h3>
+                    <ul className="pl-9 space-y-2 text-gray-600 dark:text-gray-300">
+                        {content.suggestedAgentTasks.map((task, i) => (
+                            <li key={i} className="font-mono text-sm p-2 bg-slate-100 dark:bg-slate-700/50 rounded-md">
+                                <code>{task}</code>
                             </li>
                         ))}
                     </ul>

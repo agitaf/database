@@ -1,10 +1,11 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { FileUpload } from './FileUpload';
 import { DataTable } from './DataTable';
 import { AnalysisPanel } from './AnalysisPanel';
 import { Welcome } from './Welcome';
 import { ProductGrid } from './ProductGrid';
-import type { DataRow, AnalysisResult, ChatMessage, TodoItem } from '../types';
+import { AgentContextModal } from './AgentContextModal';
+import type { DataRow, AnalysisResult, ChatMessage, TodoItem, SortConfig, DataContext } from '../types';
 import { analyzeDataWithGemini, continueChat } from '../services/geminiService';
 
 declare const Papa: any;
@@ -21,6 +22,12 @@ export const Dashboard: React.FC = () => {
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
     const [isChatting, setIsChatting] = useState<boolean>(false);
     const [todos, setTodos] = useState<TodoItem[]>([]);
+    
+    // State lifted for Agent Context
+    const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
+    const [filter, setFilter] = useState('');
+    const [isContextModalOpen, setIsContextModalOpen] = useState(false);
+    const [dataContext, setDataContext] = useState<DataContext | null>(null);
 
     const resetState = () => {
         setData([]);
@@ -33,6 +40,8 @@ export const Dashboard: React.FC = () => {
         setChatHistory([]);
         setIsChatting(false);
         setTodos([]);
+        setFilter('');
+        setSortConfig(null);
     };
 
     const handleFile = useCallback((file: File) => {
@@ -165,8 +174,67 @@ export const Dashboard: React.FC = () => {
         setTodos(todos.filter(todo => todo.id !== id));
     };
 
+    const handleSort = (key: string) => {
+        let direction: 'ascending' | 'descending' = 'ascending';
+        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+          direction = 'descending';
+        }
+        setSortConfig({ key, direction });
+    };
+
+    const filteredData = useMemo(() => {
+        if (!filter) return data;
+        return data.filter(row =>
+          Object.values(row).some(value =>
+            String(value).toLowerCase().includes(filter.toLowerCase())
+          )
+        );
+    }, [data, filter]);
+    
+    const sortedData = useMemo(() => {
+        let sortableItems = [...filteredData];
+        if (sortConfig !== null) {
+          sortableItems.sort((a, b) => {
+            const valA = a[sortConfig.key];
+            const valB = b[sortConfig.key];
+            
+            if (valA === null || valA === undefined) return 1;
+            if (valB === null || valB === undefined) return -1;
+            
+            if (valA < valB) {
+              return sortConfig.direction === 'ascending' ? -1 : 1;
+            }
+            if (valA > valB) {
+              return sortConfig.direction === 'ascending' ? 1 : -1;
+            }
+            return 0;
+          });
+        }
+        return sortableItems;
+    }, [filteredData, sortConfig]);
+
+    const generateDataContext = () => {
+        const context: DataContext = {
+          schema: headers,
+          viewSettings: {
+            filterQuery: filter,
+            sortConfig: sortConfig,
+            viewMode: viewMode,
+          },
+          dataSnapshot: sortedData,
+          initialAnalysis: analysis,
+        };
+        setDataContext(context);
+        setIsContextModalOpen(true);
+    };
+
     return (
         <div className="max-w-7xl mx-auto space-y-8">
+            <AgentContextModal 
+                isOpen={isContextModalOpen}
+                onClose={() => setIsContextModalOpen(false)}
+                context={dataContext}
+            />
             <FileUpload onFileSelect={handleFile} onClear={resetState} fileName={fileName} />
             
             {error && (
@@ -192,9 +260,25 @@ export const Dashboard: React.FC = () => {
                         onRemoveTodo={removeTodo}
                     />
                     {viewMode === 'table' ? (
-                        <DataTable headers={headers} data={data} onViewChange={setViewMode} />
+                        <DataTable 
+                            headers={headers} 
+                            data={sortedData} 
+                            onViewChange={setViewMode}
+                            filter={filter}
+                            onFilterChange={setFilter}
+                            sortConfig={sortConfig}
+                            onSortChange={handleSort}
+                            onGenerateContext={generateDataContext}
+                        />
                     ) : (
-                        <ProductGrid headers={headers} data={data} onViewChange={setViewMode} />
+                        <ProductGrid 
+                            headers={headers} 
+                            data={sortedData} 
+                            onViewChange={setViewMode}
+                            filter={filter}
+                            onFilterChange={setFilter}
+                            onGenerateContext={generateDataContext}
+                        />
                     )}
                 </div>
             ) : (

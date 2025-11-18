@@ -3,11 +3,15 @@ import type { DataRow } from '../types';
 import { Squares2X2Icon } from './icons/Squares2X2Icon';
 import { TableIcon } from './icons/TableIcon';
 import { PhotoIcon } from './icons/PhotoIcon';
+import { CodeBracketSquareIcon } from './icons/CodeBracketSquareIcon';
 
 interface ProductGridProps {
   headers: string[];
   data: DataRow[];
   onViewChange: (mode: 'table' | 'grid') => void;
+  onGenerateContext: () => void;
+  filter: string;
+  onFilterChange: (filter: string) => void;
 }
 
 const ITEMS_PER_PAGE = 12;
@@ -56,26 +60,20 @@ const ProductCard: React.FC<{ row: DataRow; headers: string[] }> = ({ row, heade
 };
 
 
-export const ProductGrid: React.FC<ProductGridProps> = ({ headers, data, onViewChange }) => {
+export const ProductGrid: React.FC<ProductGridProps> = ({ headers, data, onViewChange, onGenerateContext, filter, onFilterChange }) => {
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [filter, setFilter] = useState('');
 
-  const filteredData = useMemo(() => {
-    if (!filter) return data;
-    return data.filter(row =>
-      Object.values(row).some(value =>
-        String(value).toLowerCase().includes(filter.toLowerCase())
-      )
-    );
-  }, [data, filter]);
-  
-  const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [filter, data.length]);
+
+  const totalPages = Math.ceil(data.length / ITEMS_PER_PAGE);
 
   const paginatedData = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
-    return filteredData.slice(startIndex, endIndex);
-  }, [filteredData, currentPage]);
+    return data.slice(startIndex, endIndex);
+  }, [data, currentPage]);
   
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
@@ -92,12 +90,17 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ headers, data, onViewC
               type="text"
               placeholder="Search..."
               value={filter}
-              onChange={(e) => {
-                setFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="w-full sm:w-56 px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow"
+              onChange={(e) => onFilterChange(e.target.value)}
+              className="w-full sm:w-48 px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow"
             />
+             <button
+                onClick={onGenerateContext}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                title="Generate AI Agent Context"
+            >
+                <CodeBracketSquareIcon className="w-5 h-5" />
+                <span className="hidden sm:inline">Agent Context</span>
+            </button>
             <div className="flex items-center self-end sm:self-center p-1 bg-gray-100 dark:bg-slate-900/50 rounded-lg">
                 <button
                     onClick={() => onViewChange('table')}

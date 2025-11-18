@@ -31,7 +31,7 @@ export const analyzeDataWithGemini = async (data: DataRow[], headers: string[]):
     const dataSample = formatDataForPrompt(data, headers);
     
     const prompt = `
-        You are an expert e-commerce data analyst. Your primary goal is to analyze sales and product data to provide actionable insights for an online store.
+        You are an expert e-commerce data analyst and AI agent coordinator. Your primary goal is to analyze sales and product data to provide actionable insights for an online store and suggest automatable tasks for an AI agent.
         The full dataset contains ${data.length} rows. Here is a sample of the data in CSV format:
         ---
         ${dataSample}
@@ -41,8 +41,9 @@ export const analyzeDataWithGemini = async (data: DataRow[], headers: string[]):
         1.  **Data Overview**: Briefly describe the data's structure (columns, etc.) and highlight any potential quality issues like missing values or inconsistencies.
         2.  **Key Insights & Sales Performance**: Identify top-selling products, performance by category, and significant sales trends. Provide supporting data where possible.
         3.  **Inventory & Anomaly Detection**: Point out potential inventory issues (e.g., low stock for popular items) and identify any unusual data points or anomalies in sales patterns.
-        4.  **Actionable Recommendations**: Suggest 2-3 concrete business actions. Examples include marketing promotions for specific products, inventory restocking priorities, or pricing adjustments.
-        5.  **Suggested Visualizations**: If the data is suitable, suggest up to two simple visualizations (bar or pie charts). Focus on valuable e-commerce metrics like 'Sales by Category' or 'Top 5 Products by Revenue'. For each chart, provide a title, type, and the aggregated data in a label/value format.
+        4.  **Actionable Recommendations**: Suggest 2-3 concrete business actions for a human to perform. Examples include marketing promotions for specific products, inventory restocking priorities, or pricing adjustments.
+        5.  **Suggested Agent Tasks**: Suggest 2-3 concrete, automatable tasks for an AI agent. Frame these as direct commands. For example: "Draft an email to the purchasing department to reorder low-stock items" or "Generate a summary report of Q3 sales performance for the management team".
+        6.  **Suggested Visualizations**: If the data is suitable, suggest up to two simple visualizations (bar or pie charts). Focus on valuable e-commerce metrics like 'Sales by Category' or 'Top 5 Products by Revenue'. For each chart, provide a title, type, and the aggregated data in a label/value format.
 
         Populate the JSON object strictly according to the provided schema. Your analysis should be concise, professional, and directly useful for making business decisions.
     `;
@@ -84,7 +85,12 @@ export const analyzeDataWithGemini = async (data: DataRow[], headers: string[]):
           actionableRecommendations: {
             type: Type.ARRAY,
             items: { type: Type.STRING },
-            description: "Suggest business actions that could be taken based on the analysis."
+            description: "Suggest business actions for a human to take based on the analysis."
+          },
+          suggestedAgentTasks: {
+            type: Type.ARRAY,
+            items: { type: Type.STRING },
+            description: "Suggest concrete, automatable tasks for an AI agent based on the analysis. Frame them as commands."
           },
           suggestedVisualizations: {
             type: Type.ARRAY,

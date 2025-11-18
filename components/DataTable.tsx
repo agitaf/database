@@ -4,65 +4,39 @@ import { ArrowUpIcon } from './icons/ArrowUpIcon';
 import { ArrowDownIcon } from './icons/ArrowDownIcon';
 import { Squares2X2Icon } from './icons/Squares2X2Icon';
 import { TableIcon } from './icons/TableIcon';
+import { CodeBracketSquareIcon } from './icons/CodeBracketSquareIcon';
 
 interface DataTableProps {
   headers: string[];
   data: DataRow[];
   onViewChange: (mode: 'table' | 'grid') => void;
+  onGenerateContext: () => void;
+  filter: string;
+  onFilterChange: (filter: string) => void;
+  sortConfig: SortConfig | null;
+  onSortChange: (key: string) => void;
 }
 
 const ITEMS_PER_PAGE = 15;
 
-export const DataTable: React.FC<DataTableProps> = ({ headers, data, onViewChange }) => {
-  const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
+export const DataTable: React.FC<DataTableProps> = ({ headers, data, onViewChange, onGenerateContext, filter, onFilterChange, sortConfig, onSortChange }) => {
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [filter, setFilter] = useState('');
 
-  const filteredData = useMemo(() => {
-    if (!filter) return data;
-    return data.filter(row =>
-      Object.values(row).some(value =>
-        String(value).toLowerCase().includes(filter.toLowerCase())
-      )
-    );
-  }, [data, filter]);
+  // Reset page to 1 when filter or data changes
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [filter, data.length]);
 
-  const sortedData = useMemo(() => {
-    let sortableItems = [...filteredData];
-    if (sortConfig !== null) {
-      sortableItems.sort((a, b) => {
-        const valA = a[sortConfig.key];
-        const valB = b[sortConfig.key];
-        
-        if (valA === null || valA === undefined) return 1;
-        if (valB === null || valB === undefined) return -1;
-        
-        if (valA < valB) {
-          return sortConfig.direction === 'ascending' ? -1 : 1;
-        }
-        if (valA > valB) {
-          return sortConfig.direction === 'ascending' ? 1 : -1;
-        }
-        return 0;
-      });
-    }
-    return sortableItems;
-  }, [filteredData, sortConfig]);
-
-  const totalPages = Math.ceil(sortedData.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(data.length / ITEMS_PER_PAGE);
 
   const paginatedData = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
-    return sortedData.slice(startIndex, endIndex);
-  }, [sortedData, currentPage]);
+    return data.slice(startIndex, endIndex);
+  }, [data, currentPage]);
   
   const requestSort = (key: string) => {
-    let direction: 'ascending' | 'descending' = 'ascending';
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
-      direction = 'descending';
-    }
-    setSortConfig({ key, direction });
+    onSortChange(key);
     setCurrentPage(1);
   };
   
@@ -81,12 +55,17 @@ export const DataTable: React.FC<DataTableProps> = ({ headers, data, onViewChang
               type="text"
               placeholder="Search..."
               value={filter}
-              onChange={(e) => {
-                setFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="w-full sm:w-56 px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow"
+              onChange={(e) => onFilterChange(e.target.value)}
+              className="w-full sm:w-48 px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow"
             />
+            <button
+                onClick={onGenerateContext}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                title="Generate AI Agent Context"
+            >
+                <CodeBracketSquareIcon className="w-5 h-5" />
+                <span className="hidden sm:inline">Agent Context</span>
+            </button>
             <div className="flex items-center self-end sm:self-center p-1 bg-gray-100 dark:bg-slate-900/50 rounded-lg">
                 <button
                     onClick={() => onViewChange('table')}
