@@ -1,0 +1,5 @@
+{
+  "name": "ERP System",
+  "description": "An intelligent ERP system to upload, view, and analyze your business data from CSV or Excel files using the power of Gemini AI.",
+  "requestFramePermissions": []
+}
